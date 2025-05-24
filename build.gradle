@@ -1,0 +1,92 @@
+plugins {
+	id 'java-platform'
+	id 'maven-publish'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.unity'
+version = '1.1.1'
+description = "Unity Gradle BOM for Dependency Management"
+
+javaPlatform {
+	allowDependencies()
+}
+
+repositories {
+	mavenCentral()
+	maven { url = uri('https://repo.spring.io/milestone') }
+	maven { url = uri('https://packages.confluent.io/maven/') }
+}
+
+dependencyManagement {
+	imports {
+		mavenBom 'org.springframework.boot:spring-boot-dependencies:3.4.5'
+		mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2024.0.1'
+		mavenBom 'io.grpc:grpc-bom:1.72.0'
+	}
+}
+
+dependencies {
+	constraints {
+		// Apache Avro (no BOM)
+		api 'org.apache.avro:avro:1.12.0'
+
+		// Confluent Kafka (no managed BOM)
+		api 'io.confluent:kafka-avro-serializer:7.9.1'
+
+		// Google
+		api 'com.google.guava:guava:33.4.3-jre'
+		api 'com.google.protobuf:protobuf-java:4.31.0'
+
+		// Apache Commons
+		api 'org.apache.commons:commons-collections:4:5.0'
+
+		// OkHttp
+		api 'com.squareup.okhttp3:okhttp:4.12.0'
+
+		// Failsafe
+		api 'dev.failsafe:failsafe:3.3.2'
+	}
+}
+
+publishing {
+	repositories {
+		maven {
+			name = "GitHubPackages"
+			url = uri("https://maven.pkg.github.com/prayas-p-mallick/gradle-bom")
+			credentials {
+				username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+				password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+			}
+		}
+	}
+
+	publications {
+        release(MavenPublication) {
+			groupId = 'com.unity'
+			artifactId = 'gradle-bom'
+			version = project.version
+
+			pom {
+				name = 'Unity Gradle BOM'
+				description = project.description
+				url = 'https://github.com/prayas-p-mallick/gradle-bom'
+				licenses {
+					license {
+						name = 'Apache License, Version 2.0'
+						url = 'https://www.apache.org/licenses/LICENSE-2.0'
+					}
+				}
+				scm {
+					connection = 'scm:git:git://github.com/prayas-p-mallick/gradle-bom.git'
+					developerConnection = 'scm:git:ssh://github.com:prayas-p-mallick/gradle-bom.git'
+					url = 'https://github.com/prayas-p-mallick/gradle-bom'
+				}
+			}
+		}
+	}
+
+	afterEvaluate {
+		publishing.publications.release.from(components["javaPlatform"])
+	}
+}
